@@ -45,9 +45,9 @@ struct Reference {
   MDB_val val;
 
   Reference(v8::Local<v8::Value> obj, MDB_val val) : val(val) {
-    v8::Local<v8::Object> _obj = v8::Object::New();
-    _obj->Set(NanSymbol("obj"), obj);
-    NanAssignPersistent(v8::Object, handle, _obj);
+    v8::Local<v8::Object> _obj = NanNew<v8::Object>();
+    _obj->Set(NanNew<v8::String>("obj"), obj);
+    NanAssignPersistent(handle, _obj);
   };
   // TODO: unpersist this baby... probably easier as a class
 };

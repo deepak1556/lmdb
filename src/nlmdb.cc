@@ -15,9 +15,9 @@ void Init (v8::Handle<v8::Object> target) {
   Iterator::Init();
 
   v8::Local<v8::Function> nlmdb =
-      v8::FunctionTemplate::New(NLMDB)->GetFunction();
+      NanNew<v8::FunctionTemplate>(NLMDB)->GetFunction();
 
-  target->Set(v8::String::NewSymbol("nlmdb"), nlmdb);
+  target->Set(NanNew<v8::String>("nlmdb"), nlmdb);
 }
 
 NODE_MODULE(nlmdb, Init)

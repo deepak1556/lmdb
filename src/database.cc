@@ -253,7 +253,7 @@ int Database::NewIterator (MDB_txn **txn, MDB_cursor **cursor) {
     return rc;
   }
   rc = mdb_cursor_open(*txn, dbi, cursor);
-  
+
   //std::cerr << "opened cursor! " << cursor << ", " << strerror(rc) << std::endl;
   return rc;
 }
@@ -272,9 +272,9 @@ NAN_METHOD(NLMDB) {
 void Database::Init () {
   NanScope();
 
-  v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(Database::New);
-  NanAssignPersistent(v8::FunctionTemplate, database_constructor, tpl);
-  tpl->SetClassName(NanSymbol("Database"));
+  v8::Local<v8::FunctionTemplate> tpl = NanNew<v8::FunctionTemplate>(Database::New);
+  NanAssignPersistent(database_constructor, tpl);
+  tpl->SetClassName(NanNew<v8::String>("Database"));
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
   NODE_SET_PROTOTYPE_METHOD(tpl, "open", Database::Open);
   NODE_SET_PROTOTYPE_METHOD(tpl, "close", Database::Close);
@@ -310,7 +310,7 @@ v8::Handle<v8::Value> Database::NewInstance (v8::Local<v8::String> &location) {
   v8::Local<v8::Object> instance;
 
   v8::Local<v8::FunctionTemplate> constructorHandle =
-      NanPersistentToLocal(database_constructor);
+      NanNew<v8::FunctionTemplate>(database_constructor);
 
   if (location.IsEmpty()) {
     instance = constructorHandle->GetFunction()->NewInstance(0, NULL);
@@ -331,55 +331,55 @@ NAN_METHOD(Database::Open) {
 
   options.createIfMissing = NanBooleanOptionValue(
       optionsObj
-    , NanSymbol("createIfMissing")
+    , NanNew<v8::String>("createIfMissing")
     , true
   );
   options.errorIfExists = NanBooleanOptionValue(
       optionsObj
-    , NanSymbol("errorIfExists")
+    , NanNew<v8::String>("errorIfExists")
   , false);
   options.mapSize = UInt64OptionValue(
       optionsObj
-    , NanSymbol("mapSize")
+    , NanNew<v8::String>("mapSize")
     , DEFAULT_MAPSIZE
   );
   options.maxReaders = UInt64OptionValue(
       optionsObj
-    , NanSymbol("maxReaders")
+    , NanNew<v8::String>("maxReaders")
     , DEFAULT_READERS
   );
   options.sync = NanBooleanOptionValue(
       optionsObj
-    , NanSymbol("sync")
+    , NanNew<v8::String>("sync")
   , DEFAULT_SYNC);
   options.readOnly = NanBooleanOptionValue(
       optionsObj
-    , NanSymbol("readOnly")
+    , NanNew<v8::String>("readOnly")
     , DEFAULT_READONLY
   );
   options.writeMap = NanBooleanOptionValue(
       optionsObj
-    , NanSymbol("writeMap")
+    , NanNew<v8::String>("writeMap")
     , DEFAULT_READONLY
   );
   options.metaSync = NanBooleanOptionValue(
       optionsObj
-    , NanSymbol("metaSync")
+    , NanNew<v8::String>("metaSync")
     , DEFAULT_METASYNC
   );
   options.mapAsync = NanBooleanOptionValue(
       optionsObj
-    , NanSymbol("mapAsync")
+    , NanNew<v8::String>("mapAsync")
     , DEFAULT_MAPASYNC
   );
   options.fixedMap = NanBooleanOptionValue(
       optionsObj
-    , NanSymbol("fixedMap")
+    , NanNew<v8::String>("fixedMap")
     , DEFAULT_FIXEDMAP
   );
   options.metaSync = NanBooleanOptionValue(
       optionsObj
-    , NanSymbol("notls")
+    , NanNew<v8::String>("notls")
     , DEFAULT_NOTLS
   );
 
@@ -427,10 +427,10 @@ NAN_METHOD(Database::Close) {
         if (!iterator->ended) {
           v8::Local<v8::Function> end =
               NanObjectWrapHandle(iterator)
-                ->Get(NanSymbol("end"))
+                ->Get(NanNew<v8::String>("end"))
                   .As<v8::Function>();
           v8::Local<v8::Value> argv[] = {
-              v8::FunctionTemplate::New()->GetFunction() // empty callback
+              NanNew<v8::FunctionTemplate>()->GetFunction() // empty callback
           };
           v8::TryCatch try_catch;
           end->Call(NanObjectWrapHandle(iterator), 1, argv);
@@ -486,7 +486,7 @@ NAN_METHOD(Database::Get) {
 
   //std::cerr << "->GETFROMDB(" << (char*)key.mv_data << "(" << key.mv_size << ")" << std::endl;
 
-  bool asBuffer = NanBooleanOptionValue(optionsObj, NanSymbol("asBuffer"), true);
+  bool asBuffer = NanBooleanOptionValue(optionsObj, NanNew<v8::String>("asBuffer"), true);
 
   ReadWorker* worker = new ReadWorker(
       database
@@ -543,16 +543,16 @@ NAN_METHOD(Database::Batch) {
 
     v8::Local<v8::Object> obj = v8::Local<v8::Object>::Cast(array->Get(i));
 
-    NL_CB_ERR_IF_NULL_OR_UNDEFINED(obj->Get(NanSymbol("type")), type)
+    NL_CB_ERR_IF_NULL_OR_UNDEFINED(obj->Get(NanNew<v8::String>("type")), type)
 
-    v8::Local<v8::Object> keyBuffer = obj->Get(NanSymbol("key")).As<v8::Object>();
+    v8::Local<v8::Object> keyBuffer = obj->Get(NanNew<v8::String>("key")).As<v8::Object>();
     NL_CB_ERR_IF_NULL_OR_UNDEFINED(keyBuffer, key)
 
-    if (obj->Get(NanSymbol("type"))->StrictEquals(NanSymbol("del"))) {
+    if (obj->Get(NanNew<v8::String>("type"))->StrictEquals(NanNew<v8::String>("del"))) {
       NL_STRING_OR_BUFFER_TO_MDVAL(key, keyBuffer, key)
       batch->Delete(keyBuffer, key);
-    } else if (obj->Get(NanSymbol("type"))->StrictEquals(NanSymbol("put"))) {
-      v8::Local<v8::Object> valueBuffer = obj->Get(NanSymbol("value")).As<v8::Object>();
+    } else if (obj->Get(NanNew<v8::String>("type"))->StrictEquals(NanNew<v8::String>("put"))) {
+      v8::Local<v8::Object> valueBuffer = obj->Get(NanNew<v8::String>("value")).As<v8::Object>();
       NL_CB_ERR_IF_NULL_OR_UNDEFINED(valueBuffer, value)
       NL_STRING_OR_BUFFER_TO_MDVAL(key, keyBuffer, key)
       NL_STRING_OR_BUFFER_TO_MDVAL(value, valueBuffer, value)
@@ -582,7 +582,7 @@ NAN_METHOD(Database::Iterator) {
   v8::TryCatch try_catch;
   v8::Handle<v8::Object> iteratorHandle = Iterator::NewInstance(
       args.This()
-    , v8::Number::New(id)
+    , NanNew<v8::Number>(id)
     , optionsObj
   );
   if (try_catch.HasCaught()) {

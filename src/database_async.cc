@@ -59,7 +59,7 @@ IOWorker::IOWorker (
   , key(key)
   , keyHandle(keyHandle)
 {
-  SavePersistent("key", keyHandle);
+  SaveToPersistent("key", keyHandle);
 };
 
 IOWorker::~IOWorker () {}
@@ -95,13 +95,13 @@ void ReadWorker::HandleOKCallback () {
   if (asBuffer) {
     returnValue = NanNewBufferHandle((char*)value.mv_data, value.mv_size);
   } else {
-    returnValue = v8::String::New((char*)value.mv_data, value.mv_size);
+    returnValue = NanNew<v8::String>((char*)value.mv_data, value.mv_size);
   }
   v8::Local<v8::Value> argv[] = {
-      v8::Local<v8::Value>::New(v8::Null())
+      NanNew(v8::Null())
     , returnValue
   };
-  callback->Run(2, argv);
+  callback->Call(2, argv);
 }
 
 /** DELETE WORKER **/
@@ -143,7 +143,7 @@ WriteWorker::WriteWorker (
   , value(value)
   , valueHandle(valueHandle)
 {
-  SavePersistent("value", valueHandle);
+  SaveToPersistent("value", valueHandle);
 };
 
 WriteWorker::~WriteWorker () {}

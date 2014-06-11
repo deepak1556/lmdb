@@ -82,7 +82,7 @@ static inline uint64_t UInt64OptionValue(
 #define NL_RETURN_CALLBACK_OR_ERROR(callback, msg)                             \
   if (!callback.IsEmpty() && callback->IsFunction()) {                         \
     v8::Local<v8::Value> argv[] = {                                            \
-      v8::Local<v8::Value>::New(v8::Exception::Error(                          \
+      NanNew(v8::Exception::Error(                          \
         v8::String::New(msg))                                                  \
       )                                                                        \
     };                                                                         \
@@ -142,9 +142,9 @@ static inline void DisposeStringOrBufferFromMDVal(
       v8::Persistent<v8::Object> &handle
     , MDB_val val) {
 
-  if (!node::Buffer::HasInstance(NanPersistentToLocal(handle)->Get(NanSymbol("obj"))))
+  if (!node::Buffer::HasInstance(NanNew(handle)->Get(NanNew<v8::String>("obj"))))
     delete[] (char*)val.mv_data;
-  NanDispose(handle);
+  NanDisposePersistent(handle);
 }
 
 // NOTE: must call DisposeStringOrBufferFromMDVal() on objects created here

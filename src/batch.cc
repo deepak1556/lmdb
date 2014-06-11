@@ -14,21 +14,21 @@ namespace nlmdb {
 BatchOp::BatchOp (v8::Local<v8::Object> &keyHandle, MDB_val key) : key(key) {
   NanScope();
 
-  v8::Local<v8::Object> obj = v8::Object::New();
-  obj->Set(NanSymbol("key"), keyHandle);
-  NanAssignPersistent(v8::Object, persistentHandle, obj);
+  v8::Local<v8::Object> obj = NanNew<v8::Object>();
+  obj->Set(NanNew<v8::String>("key"), keyHandle);
+  NanAssignPersistent(persistentHandle, obj);
 }
 
 BatchOp::~BatchOp () {
   NanScope();
 
-  v8::Local<v8::Object> handle = NanPersistentToLocal(persistentHandle);
+  v8::Local<v8::Object> handle = NanNew(persistentHandle);
   v8::Local<v8::Object> keyHandle =
-      handle->Get(NanSymbol("key")).As<v8::Object>();
+      handle->Get(NanNew<v8::String>("key")).As<v8::Object>();
   DisposeStringOrBufferFromMDVal(keyHandle, key);
 
   if (!persistentHandle.IsEmpty())
-    NanDispose(persistentHandle);
+    NanDisposePersistent(persistentHandle);
 }
 
 BatchDel::BatchDel (v8::Local<v8::Object> &keyHandle, MDB_val key)
@@ -48,16 +48,16 @@ BatchPut::BatchPut (
 ) : BatchOp(keyHandle, key)
   , value(value)
 {
-    v8::Local<v8::Object> handle = NanPersistentToLocal(persistentHandle);
-    handle->Set(NanSymbol("value"), valueHandle);
+    v8::Local<v8::Object> handle = NanNew(persistentHandle);
+    handle->Set(NanNew<v8::String>("value"), valueHandle);
 }
 
 BatchPut::~BatchPut () {
   NanScope();
 
-  v8::Local<v8::Object> handle = NanPersistentToLocal(persistentHandle);
+  v8::Local<v8::Object> handle = NanNew(persistentHandle);
   v8::Local<v8::Object> valueHandle =
-      handle->Get(NanSymbol("value")).As<v8::Object>();
+      handle->Get(NanNew<v8::String>("value")).As<v8::Object>();
 
   DisposeStringOrBufferFromMDVal(valueHandle, value);
 }
@@ -119,9 +119,9 @@ static v8::Persistent<v8::FunctionTemplate> writebatch_constructor;
 void WriteBatch::Init () {
   NanScope();
 
-  v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(WriteBatch::New);
-  NanAssignPersistent(v8::FunctionTemplate, writebatch_constructor, tpl);
-  tpl->SetClassName(NanSymbol("Batch"));
+  v8::Local<v8::FunctionTemplate> tpl = NanNew<v8::FunctionTemplate>(WriteBatch::New);
+  NanAssignPersistent(writebatch_constructor, tpl);
+  tpl->SetClassName(NanNew<v8::String>("Batch"));
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
   NODE_SET_PROTOTYPE_METHOD(tpl, "put", WriteBatch::Put);
   NODE_SET_PROTOTYPE_METHOD(tpl, "del", WriteBatch::Del);
@@ -155,7 +155,7 @@ v8::Handle<v8::Value> WriteBatch::NewInstance (
   v8::Local<v8::Object> instance;
 
   v8::Local<v8::FunctionTemplate> constructorHandle =
-      NanPersistentToLocal(writebatch_constructor);
+      NanNew<v8::FunctionTemplate>(writebatch_constructor);
 
   if (optionsObj.IsEmpty()) {
     v8::Handle<v8::Value> argv[] = { database };
@@ -239,7 +239,7 @@ NAN_METHOD(WriteBatch::Write) {
   if (batch->written) {
     return NanThrowError("write() already called on this batch");
   }
-  
+
   if (args.Length() == 0) {
     return NanThrowError("write() requires a callback argument");
   }
